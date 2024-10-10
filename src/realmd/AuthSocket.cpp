@@ -493,9 +493,7 @@ bool AuthSocket::_HandleLogonChallenge()
                             const int requireTokensForGMLevel = sConfig.GetIntDefault("RequireTokensFor", -1);
                             const bool tokenOverride = secLevel >= requireTokensForGMLevel;
                             if ( tokenOverride )
-                                DEBUG_LOG("[Auth] Overriding token requirements for %s",self->_login.c_str());
-                            else
-                                DEBUG_LOG("[AUTH] AccountSecurityLevel: %u, RequireTokensForGMLevel: %d",secLevel,requireTokensForGMLevel);
+                                DEBUG_LOG("[Auth] Overriding token requirements for %s with gmlevel %u",self->_login.c_str(),secLevel);
 
                             self->_token = fields[6].GetCppString();
 
