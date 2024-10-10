@@ -374,7 +374,7 @@ bool AuthSocket::_HandleLogonChallenge()
             self->_login = (const char*)body->userName;
             self->_build = body->build;
 
-            // Convert uint8[4] to string, reRequireTokensForstore string order as its byte order is reversed
+            // Convert uint8[4] to string, restore string order as its byte order is reversed
             body->os[3] = '\0';
             self->m_os = (char*)body->os;
             std::reverse(self->m_os.begin(), self->m_os.end());
