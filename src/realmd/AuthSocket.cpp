@@ -374,7 +374,7 @@ bool AuthSocket::_HandleLogonChallenge()
             self->_login = (const char*)body->userName;
             self->_build = body->build;
 
-            // Convert uint8[4] to string, restore string order as its byte order is reversed
+            // Convert uint8[4] to string, reRequireTokensForstore string order as its byte order is reversed
             body->os[3] = '\0';
             self->m_os = (char*)body->os;
             std::reverse(self->m_os.begin(), self->m_os.end());
@@ -487,9 +487,19 @@ bool AuthSocket::_HandleLogonChallenge()
                             pkt->append(s.AsByteArray());// 32 bytes
                             pkt->append(VersionChallenge.data(), VersionChallenge.size());
                             uint8 securityFlags = 0;
+                            
+                            // Determine if there is a forced token requirement
+                            const uint8 secLevel = fields[3].GetUInt8();
+                            const int requireTokensForGMLevel = sConfig.GetIntDefault("RequireTokensFor", -1);
+                            const bool tokenOverride = secLevel >= requireTokensForGMLevel;
+                            if ( tokenOverride )
+                                DEBUG_LOG("[Auth] Overriding token requirements for %s",self->_login.c_str());
+                            else
+                                DEBUG_LOG("[AUTH] AccountSecurityLevel: %u, RequireTokensForGMLevel: %d",secLevel,requireTokensForGMLevel);
 
                             self->_token = fields[6].GetCppString();
-                            if (!self->_token.empty() && self->_build >= 8606) // authenticator was added in 2.4.3
+
+                            if (( !self->_token.empty() || tokenOverride) && self->_build >= 8606) // authenticator was added in 2.4.3
                                 securityFlags = SECURITY_FLAG_AUTHENTICATOR;
 
                             *pkt << uint8(securityFlags);                    // security flags (0x0...0x04)
@@ -513,7 +523,6 @@ bool AuthSocket::_HandleLogonChallenge()
                             if (securityFlags & SECURITY_FLAG_AUTHENTICATOR)    // Authenticator input
                                 *pkt << uint8(1);
 
-                            uint8 secLevel = fields[3].GetUInt8();
                             self->_accountSecurityLevel = secLevel <= SEC_ADMINISTRATOR ? AccountTypes(secLevel) : SEC_ADMINISTRATOR;
 
                             ///- All good, await client's proof
